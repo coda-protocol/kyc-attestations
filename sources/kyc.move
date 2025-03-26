@@ -268,21 +268,32 @@ public fun get_effective_status(
 }
 
 /// Returns the recipient address stored in the attestation.
-public fun recipient(attestation: &KycAttestation): address {
-    attestation.recipient
-}
+public fun recipient(attestation: &KycAttestation): address { attestation.recipient }
 
 /// Returns the issuer address stored in the attestation.
-public fun issuer(attestation: &KycAttestation): address {
-    attestation.issuer
-}
+public fun issuer(attestation: &KycAttestation): address { attestation.issuer }
 
 /// Returns the expiry timestamp (ms) stored in the attestation.
-public fun expiry_timestamp_ms(attestation: &KycAttestation): u64 {
-    attestation.expiry_timestamp_ms
-}
+public fun expiry_timestamp_ms(attestation: &KycAttestation): u64 { attestation.expiry_timestamp_ms }
 
 /// Returns the optional verification data hash.
 public fun verification_data_hash(attestation: &KycAttestation): &Option<vector<u8>> {
     &attestation.verification_data_hash
+}
+
+// === Testing Helpers ===
+
+#[test_only]
+public(package) fun issuer_count(registry: &IssuerRegistry): u64 {
+    table::length(&registry.issuers)
+}
+
+#[test_only]
+public(package) fun revoked_count(registry: &RevocationRegistry): u64 {
+    table::length(&registry.revoked_attestations)
+}
+
+#[test_only]
+public fun init_for_testing(ctx: &mut TxContext) {
+    init(ctx);
 }
