@@ -46,22 +46,24 @@ const EIssuerNotFound: u64 = 2;
 const EIssuerNotAuthorized: u64 = 3;
 /// The caller is not the original issuer of this attestation.
 const ENotOriginalIssuer: u64 = 4;
+/// The attestation has already been revoked.
+const EAttestationAlreadyRevoked: u64 = 5;
 
 // === Events ===
 
-public struct KycIssued has copy, drop {
-    object_id: ID,
+public struct KycIssuedEvent has copy, drop {
+    id: ID,
     recipient: address,
     issuer: address,
     expiry_timestamp_ms: u64
 }
 
-public struct KycRevoked has copy, drop {
-    object_id: ID,
+public struct KycRevokedEvent has copy, drop {
+    id: ID,
     issuer: address
 }
 
-public struct IssuerRegistryUpdated has copy, drop {
+public struct IssuerRegistryUpdatedEvent has copy, drop {
     admin: address,
     issuer_affected: address,
     added: bool
@@ -95,20 +97,13 @@ public struct IssuerRegistry has key {
     issuers: Table<address, bool>
 }
 
-/// Shared registry containing ID's of revoked `KycAttestations` objects.
-/// Key: ID of the revoked `KycAttestations` object.
-/// Value: Timestamp (ms) when it was revoked.
-public struct RevocationRegistry has key {
-    id: UID,
-    revoked_attestations: Table<ID, u64>
-}
-
 public struct KycAttestation has key, store {
     id: UID,
     recipient: address,
     issuer: address,
     issuance_timestamp_ms: u64,
     expiry_timestamp_ms: u64,
+    status: KycStatusInternal,
     verification_data_hash: Option<vector<u8>>
 }
 
@@ -122,11 +117,6 @@ fun init(ctx: &mut TxContext) {
     transfer::share_object(IssuerRegistry {
         id: object::new(ctx),
         issuers: table::new<address, bool>(ctx)
-    });
-
-    transfer::share_object(RevocationRegistry {
-        id: object::new(ctx),
-        revoked_attestations: table::new<ID, u64>(ctx)
     });
 }
 
@@ -142,7 +132,7 @@ public entry fun add_issuer(
 
     table::add(&mut registry.issuers, issuer, true);
 
-    event::emit(IssuerRegistryUpdated {
+    event::emit(IssuerRegistryUpdatedEvent {
         admin: ctx.sender(),
         issuer_affected: issuer,
         added: true
@@ -160,7 +150,7 @@ public entry fun remove_issuer(
     // Remove the issuer; the boolean value is discarded.
     let _ = table::remove(&mut registry.issuers, issuer);
 
-    event::emit(IssuerRegistryUpdated {
+    event::emit(IssuerRegistryUpdatedEvent {
         admin: ctx.sender(),
         issuer_affected: issuer,
         added: false
@@ -195,42 +185,34 @@ public entry fun issue_attestation(
         issuer,
         issuance_timestamp_ms: current_time_ms,
         expiry_timestamp_ms,
+        status: KycStatusInternal::Active,
         verification_data_hash
     };
 
-    event::emit(KycIssued {
-        object_id: object::id(&attestation),
+    event::emit(KycIssuedEvent {
+        id: object::id(&attestation),
         recipient,
         issuer,
         expiry_timestamp_ms,
     });
 
-    transfer::public_freeze_object(attestation);
+    transfer::public_transfer(attestation, recipient);
 }
 
 /// Revokes an existing `KycAttestation`.
 /// Can only be called by the original issuer of the specific attestation.
 public entry fun revoke_attestation(
-    attestation: &KycAttestation,
-    revocation_registry: &mut RevocationRegistry,
-    clock: &Clock,
+    attestation: &mut KycAttestation,
     ctx: &mut TxContext
 ) {
     let revoker = ctx.sender();
     assert!(revoker == attestation.issuer, ENotOriginalIssuer);
+    assert!(attestation.status != KycStatusInternal::Revoked, EAttestationAlreadyRevoked);
 
-    let attestation_id = object::id(attestation);
-    assert!(!table::contains(&revocation_registry.revoked_attestations, attestation_id));
+    attestation.status = KycStatusInternal::Revoked;
 
-    let revocation_timestamp_ms = clock.timestamp_ms();
-    table::add(
-        &mut revocation_registry.revoked_attestations,
-        attestation_id,
-        revocation_timestamp_ms
-    );
-
-    event::emit(KycRevoked {
-        object_id: attestation_id,
+    event::emit(KycRevokedEvent {
+        id: object::id(attestation),
         issuer: revoker
     });
 }
@@ -242,19 +224,13 @@ public fun is_issuer_authorized(registry: &IssuerRegistry, issuer_address: addre
     table::contains(&registry.issuers, issuer_address)
 }
 
-/// Checks if a specific KycAttestation ID is present in the RevocationRegistry.
-public fun is_revoked(registry: &RevocationRegistry, id: ID): bool {
-    table::contains(&registry.revoked_attestations, id)
-}
-
 /// Returns the effective status of the attestation, considering its
 /// internal status and expiry time relative to the current time provided by the Clock.
 public fun get_effective_status(
     attestation: &KycAttestation,
-    revocation_registry: &RevocationRegistry,
     clock: &Clock
 ): KycEffectiveStatus {
-    if (is_revoked(revocation_registry, object::id(attestation))) {
+    if (attestation.status == KycStatusInternal::Revoked) {
         KycEffectiveStatus::Revoked
     } else {
         let current_time_ms = clock.timestamp_ms();
@@ -269,28 +245,20 @@ public fun get_effective_status(
 
 /// Returns the recipient address stored in the attestation.
 public fun recipient(attestation: &KycAttestation): address { attestation.recipient }
-
 /// Returns the issuer address stored in the attestation.
 public fun issuer(attestation: &KycAttestation): address { attestation.issuer }
-
 /// Returns the expiry timestamp (ms) stored in the attestation.
 public fun expiry_timestamp_ms(attestation: &KycAttestation): u64 { attestation.expiry_timestamp_ms }
-
 /// Returns the optional verification data hash.
-public fun verification_data_hash(attestation: &KycAttestation): &Option<vector<u8>> {
-    &attestation.verification_data_hash
-}
+public fun verification_data_hash(attestation: &KycAttestation): &Option<vector<u8>> { &attestation.verification_data_hash }
+/// Returns the current status of the attestation.
+public fun status(attestation: &KycAttestation): KycStatusInternal { attestation.status }
 
 // === Testing Helpers ===
 
 #[test_only]
 public(package) fun issuer_count(registry: &IssuerRegistry): u64 {
     table::length(&registry.issuers)
-}
-
-#[test_only]
-public(package) fun revoked_count(registry: &RevocationRegistry): u64 {
-    table::length(&registry.revoked_attestations)
 }
 
 #[test_only]
