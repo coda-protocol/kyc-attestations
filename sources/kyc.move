@@ -262,6 +262,16 @@ public(package) fun issuer_count(registry: &IssuerRegistry): u64 {
 }
 
 #[test_only]
+public(package) fun is_status_active(attestation: &KycAttestation): bool {
+    attestation.status == KycStatusInternal::Active
+}
+
+#[test_only]
+public(package) fun is_status_revoked(attestation: &KycAttestation): bool {
+    attestation.status == KycStatusInternal::Revoked
+}
+
+#[test_only]
 public fun init_for_testing(ctx: &mut TxContext) {
     init(ctx);
 }
