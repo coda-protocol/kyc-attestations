@@ -6,13 +6,16 @@ module coda_kyc::tests;
 
 use sui::table;
 use sui::test_scenario::{Self as ts};
-use sui::clock::{Clock};
+use sui::test_utils::{assert_eq};
+use sui::clock::{Self, Clock};
 
 use coda_kyc::attestation::{
     Self,
     OperatorCap,
     IssuerRegistry,
-    RevocationRegistry
+    RevocationRegistry,
+    KycAttestation,
+    EIssuerAlreadyExists,
 };
 
 // === Test Addresses ===
@@ -77,7 +80,7 @@ fun test_admin_add_remove_issuer_success() {
         attestation::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
 
         assert!(attestation::is_issuer_authorized(&registry, ISSUER_1), 0);
-        assert!(attestation::issuer_count(&registry) == 1, 1);
+        assert_eq(attestation::issuer_count(&registry), 1);
 
         ts::return_shared(registry);
         ts::return_to_address(ADMIN, cap);
@@ -92,8 +95,38 @@ fun test_admin_add_remove_issuer_success() {
         attestation::remove_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
 
         assert!(!attestation::is_issuer_authorized(&registry, ISSUER_1), 0);
-        assert!(attestation::issuer_count(&registry) == 0, 1);
+        assert_eq(attestation::issuer_count(&registry), 0);
 
+        ts::return_shared(registry);
+        ts::return_to_address(ADMIN, cap);
+    };
+
+    ts::end(scenario);
+}
+
+#[test]
+#[expected_failure(abort_code = EIssuerAlreadyExists)]
+fun test_admin_add_existing_issuer_fails() {
+    let mut scenario = setup();
+
+    ts::next_tx(&mut scenario, ADMIN);
+    {
+        let cap = ts::take_from_address<OperatorCap>(&scenario, ADMIN);
+        let mut registry = ts::take_shared<IssuerRegistry>(&scenario);
+
+        attestation::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
+        
+        ts::return_shared(registry);
+        ts::return_to_address(ADMIN, cap);
+    };
+
+    ts::next_tx(&mut scenario, ADMIN);
+    {
+        let cap = ts::take_from_address<OperatorCap>(&scenario, ADMIN);
+        let mut registry = ts::take_shared<IssuerRegistry>(&scenario);
+
+        attestation::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
+        
         ts::return_shared(registry);
         ts::return_to_address(ADMIN, cap);
     };
