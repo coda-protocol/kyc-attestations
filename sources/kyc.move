@@ -79,7 +79,7 @@ public enum KycStatusInternal has copy, store, drop {
 
 /// Represents the effective status when checked against the current time.
 /// Returned by `get_effective_status`
-public enum KycEffectiveStatus {
+public enum KycEffectiveStatus has copy, drop {
     Active,
     Expired,
     Revoked
@@ -257,18 +257,33 @@ public fun status(attestation: &KycAttestation): KycStatusInternal { attestation
 // === Testing Helpers ===
 
 #[test_only]
-public(package) fun issuer_count(registry: &IssuerRegistry): u64 {
+public(package) fun test_issuer_count(registry: &IssuerRegistry): u64 {
     table::length(&registry.issuers)
 }
 
 #[test_only]
-public(package) fun is_status_active(attestation: &KycAttestation): bool {
+public(package) fun test_is_status_active(attestation: &KycAttestation): bool {
     attestation.status == KycStatusInternal::Active
 }
 
 #[test_only]
-public(package) fun is_status_revoked(attestation: &KycAttestation): bool {
+public(package) fun test_is_status_revoked(attestation: &KycAttestation): bool {
     attestation.status == KycStatusInternal::Revoked
+}
+
+#[test_only]
+public(package) fun test_is_effective_status_active(status: KycEffectiveStatus): bool {
+    status == KycEffectiveStatus::Active
+}
+
+#[test_only]
+public(package) fun test_is_effective_status_expired(status: KycEffectiveStatus): bool {
+    status == KycEffectiveStatus::Expired
+}
+
+#[test_only]
+public(package) fun test_is_effective_status_revoked(status: KycEffectiveStatus): bool {
+    status == KycEffectiveStatus::Revoked
 }
 
 #[test_only]
