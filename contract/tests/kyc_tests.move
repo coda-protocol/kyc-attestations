@@ -124,7 +124,7 @@ fun test_issue_attestation_success() {
         let registry = ts::take_shared<IssuerRegistry>(&scenario);
         let clock = clock::create_for_testing(ts::ctx(&mut scenario));
 
-        core::issue_attestation(&registry, USER_1, ONE_DAY_MS, option::none(), &clock, ts::ctx(&mut scenario));
+        core::issue_attestation(&registry, USER_1, ONE_DAY_MS, &clock, ts::ctx(&mut scenario));
 
         ts::return_shared(registry);
         clock.destroy_for_testing();
@@ -164,7 +164,7 @@ fun test_revoke_attestation_success() {
         let registry = ts::take_shared<IssuerRegistry>(&scenario);
         let clock = clock::create_for_testing(ts::ctx(&mut scenario));
 
-        core::issue_attestation(&registry, USER_1, ONE_DAY_MS, option::none(), &clock, ts::ctx(&mut scenario));
+        core::issue_attestation(&registry, USER_1, ONE_DAY_MS, &clock, ts::ctx(&mut scenario));
 
         ts::return_shared(registry);
         clock.destroy_for_testing();
@@ -212,7 +212,7 @@ fun test_get_effective_status() {
     {
         let registry = ts::take_shared<IssuerRegistry>(&scenario);
 
-        core::issue_attestation(&registry, USER_1, ONE_DAY_MS, option::none(), &clock, ts::ctx(&mut scenario));
+        core::issue_attestation(&registry, USER_1, ONE_DAY_MS, &clock, ts::ctx(&mut scenario));
 
         ts::return_shared(registry);
     };
@@ -291,7 +291,7 @@ fun test_get_effective_status_revoked_before_expiry() {
     {
         let registry = ts::take_shared<IssuerRegistry>(&scenario);
 
-        core::issue_attestation(&registry, USER_1, TWO_DAYS_MS, option::none(), &clock, ts::ctx(&mut scenario));
+        core::issue_attestation(&registry, USER_1, TWO_DAYS_MS, &clock, ts::ctx(&mut scenario));
 
         ts::return_shared(registry);
     };
@@ -401,7 +401,7 @@ fun test_unauthorized_issue_attestation_fails() {
         let registry = ts::take_shared<IssuerRegistry>(&scenario);
         let clock = clock::create_for_testing(ts::ctx(&mut scenario));
 
-        core::issue_attestation(&registry, USER_1, ONE_DAY_MS, option::none(), &clock, ts::ctx(&mut scenario));
+        core::issue_attestation(&registry, USER_1, ONE_DAY_MS, &clock, ts::ctx(&mut scenario));
 
         ts::return_shared(registry);
         clock.destroy_for_testing();
@@ -436,7 +436,7 @@ fun test_revoke_attestation_by_non_issuer_fails() {
         let registry = ts::take_shared<IssuerRegistry>(&scenario);
         let clock = clock::create_for_testing(ts::ctx(&mut scenario));
 
-        core::issue_attestation(&registry, USER_1, ONE_DAY_MS, option::none(), &clock, ts::ctx(&mut scenario));
+        core::issue_attestation(&registry, USER_1, ONE_DAY_MS, &clock, ts::ctx(&mut scenario));
 
         ts::return_shared(registry);
         clock.destroy_for_testing();
@@ -481,7 +481,7 @@ fun test_revoke_already_revoked_attestation_fails() {
         let registry = ts::take_shared<IssuerRegistry>(&scenario);
         let clock = clock::create_for_testing(ts::ctx(&mut scenario));
 
-        core::issue_attestation(&registry, USER_1, ONE_DAY_MS, option::none(), &clock, ts::ctx(&mut scenario));
+        core::issue_attestation(&registry, USER_1, ONE_DAY_MS, &clock, ts::ctx(&mut scenario));
 
         ts::return_shared(registry);
         clock.destroy_for_testing();
