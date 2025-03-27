@@ -45,5 +45,5 @@ async function checkUser(address: string) {
 }
 
 checkUser(
-  "0x1b16ef93ba3d6dc5b502aa799150df2bc634d77ee33ecaeabba77a929367e54d"
+  "0xfaac5bf9dd7da0706425a88413c7467b1f00a1df730ca71eca229950196a657b"
 ).catch(console.error);

@@ -129,6 +129,33 @@ export class SynthVerifier {
         };
       }
 
+      for (const obj of res.data) {
+        if (
+          !obj.data ||
+          obj.data.content?.dataType !== "moveObject" ||
+          obj.data.content.type !== this.kycAttestationType
+        ) {
+          console.warn(
+            "Skipping an unexpected object structure:",
+            obj.data?.objectId
+          );
+          continue;
+        }
+
+        // const currentHolder = obj.data.owner.AdressOwner
+
+        console.log(obj.data.owner);
+
+        const data = obj.data.content.fields as any;
+        const objectId = obj.data.objectId;
+        const issuer = data.issuer;
+        const recipient = data.recipient;
+
+        console.log(data);
+
+        // const ownerInfo =
+      }
+
       // placeholder
       return {
         status: KycVerificationStatus.Verified,

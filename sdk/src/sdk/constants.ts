@@ -6,14 +6,14 @@
  * @internal
  */
 export const PACKAGE_ID: string =
-  "0x671e73719cd1af973f08a5e17af15a18daba452a8fe919a98fa7d44847b61101";
+  "0x33c8b47d704febf97e109a96fd4bc703a291cb309c53ea8592e271767537e6a3";
 
 /**
  * The Object ID of the shared IssuerRegistry object.
  * @internal
  */
 export const ISSUER_REGISTRY_ID: string =
-  "0xb08d60e09f4b5a988f34034a536d9aea30e159c78e708dcae5231d0102baf5e0";
+  "0x120d5f874dc8deb0ddae92e68ffac57c715ea2faf8ff8e5c39ed6c9e40b17f89";
 
 /**
  * The Struct Type name for the KycAttestation object.
