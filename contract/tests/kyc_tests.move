@@ -8,7 +8,7 @@ use sui::test_scenario::{Self as ts};
 use sui::test_utils::{assert_eq};
 use sui::clock;
 
-use coda_kyc::attestation::{
+use coda_kyc::core::{
     Self,
     OperatorCap,
     IssuerRegistry,
@@ -38,7 +38,7 @@ fun setup(): ts::Scenario {
 
     {
         let ctx = ts::ctx(&mut scenario);
-        attestation::init_for_testing(ctx);
+        core::init_for_testing(ctx);
     };
 
     scenario
@@ -75,9 +75,9 @@ fun test_admin_add_remove_issuer_success() {
         let cap = ts::take_from_address<OperatorCap>(&scenario, ADMIN);
         let mut registry = ts::take_shared<IssuerRegistry>(&scenario);
 
-        attestation::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
+        core::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
 
-        assert!(attestation::is_issuer_authorized(&registry, ISSUER_1), 0);
+        assert!(core::is_issuer_authorized(&registry, ISSUER_1), 0);
         assert_eq(registry.test_issuer_count(), 1);
 
         ts::return_shared(registry);
@@ -90,9 +90,9 @@ fun test_admin_add_remove_issuer_success() {
         let cap = ts::take_from_address<OperatorCap>(&scenario, ADMIN);
         let mut registry = ts::take_shared<IssuerRegistry>(&scenario);
 
-        attestation::remove_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
+        core::remove_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
 
-        assert!(!attestation::is_issuer_authorized(&registry, ISSUER_1), 0);
+        assert!(!core::is_issuer_authorized(&registry, ISSUER_1), 0);
         assert_eq(registry.test_issuer_count(), 0);
 
         ts::return_shared(registry);
@@ -112,7 +112,7 @@ fun test_issue_attestation_success() {
         let cap = ts::take_from_address<OperatorCap>(&scenario, ADMIN);
         let mut registry = ts::take_shared<IssuerRegistry>(&scenario);
 
-        attestation::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
+        core::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
         
         ts::return_shared(registry);
         ts::return_to_address(ADMIN, cap);
@@ -124,7 +124,7 @@ fun test_issue_attestation_success() {
         let registry = ts::take_shared<IssuerRegistry>(&scenario);
         let clock = clock::create_for_testing(ts::ctx(&mut scenario));
 
-        attestation::issue_attestation(&registry, USER_1, ONE_DAY_MS, option::none(), &clock, ts::ctx(&mut scenario));
+        core::issue_attestation(&registry, USER_1, ONE_DAY_MS, option::none(), &clock, ts::ctx(&mut scenario));
 
         ts::return_shared(registry);
         clock.destroy_for_testing();
@@ -153,7 +153,7 @@ fun test_revoke_attestation_success() {
         let cap = ts::take_from_address<OperatorCap>(&scenario, ADMIN);
         let mut registry = ts::take_shared<IssuerRegistry>(&scenario);
 
-        attestation::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
+        core::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
         
         ts::return_shared(registry);
         ts::return_to_address(ADMIN, cap);
@@ -164,7 +164,7 @@ fun test_revoke_attestation_success() {
         let registry = ts::take_shared<IssuerRegistry>(&scenario);
         let clock = clock::create_for_testing(ts::ctx(&mut scenario));
 
-        attestation::issue_attestation(&registry, USER_1, ONE_DAY_MS, option::none(), &clock, ts::ctx(&mut scenario));
+        core::issue_attestation(&registry, USER_1, ONE_DAY_MS, option::none(), &clock, ts::ctx(&mut scenario));
 
         ts::return_shared(registry);
         clock.destroy_for_testing();
@@ -176,7 +176,7 @@ fun test_revoke_attestation_success() {
 
         assert!(attestation.test_is_status_active(), 1);
 
-        attestation::revoke_attestation(
+        core::revoke_attestation(
             &mut attestation,
             ts::ctx(&mut scenario)
         );
@@ -201,7 +201,7 @@ fun test_get_effective_status() {
         let cap = ts::take_from_address<OperatorCap>(&scenario, ADMIN);
         let mut registry = ts::take_shared<IssuerRegistry>(&scenario);
 
-        attestation::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
+        core::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
         
         ts::return_shared(registry);
         ts::return_to_address(ADMIN, cap);
@@ -212,7 +212,7 @@ fun test_get_effective_status() {
     {
         let registry = ts::take_shared<IssuerRegistry>(&scenario);
 
-        attestation::issue_attestation(&registry, USER_1, ONE_DAY_MS, option::none(), &clock, ts::ctx(&mut scenario));
+        core::issue_attestation(&registry, USER_1, ONE_DAY_MS, option::none(), &clock, ts::ctx(&mut scenario));
 
         ts::return_shared(registry);
     };
@@ -245,7 +245,7 @@ fun test_get_effective_status() {
     {
         let mut attestation = ts::take_from_address<KycAttestation>(&scenario, USER_1);
 
-        attestation::revoke_attestation(
+        core::revoke_attestation(
             &mut attestation,
             ts::ctx(&mut scenario)
         );
@@ -280,7 +280,7 @@ fun test_get_effective_status_revoked_before_expiry() {
         let cap = ts::take_from_address<OperatorCap>(&scenario, ADMIN);
         let mut registry = ts::take_shared<IssuerRegistry>(&scenario);
 
-        attestation::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
+        core::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
         
         ts::return_shared(registry);
         ts::return_to_address(ADMIN, cap);
@@ -291,7 +291,7 @@ fun test_get_effective_status_revoked_before_expiry() {
     {
         let registry = ts::take_shared<IssuerRegistry>(&scenario);
 
-        attestation::issue_attestation(&registry, USER_1, TWO_DAYS_MS, option::none(), &clock, ts::ctx(&mut scenario));
+        core::issue_attestation(&registry, USER_1, TWO_DAYS_MS, option::none(), &clock, ts::ctx(&mut scenario));
 
         ts::return_shared(registry);
     };
@@ -304,7 +304,7 @@ fun test_get_effective_status_revoked_before_expiry() {
     {
         let mut attestation = ts::take_from_address<KycAttestation>(&scenario, USER_1);
 
-        attestation::revoke_attestation(
+        core::revoke_attestation(
             &mut attestation,
             ts::ctx(&mut scenario)
         );
@@ -352,7 +352,7 @@ fun test_admin_add_existing_issuer_fails() {
         let cap = ts::take_from_address<OperatorCap>(&scenario, ADMIN);
         let mut registry = ts::take_shared<IssuerRegistry>(&scenario);
 
-        attestation::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
+        core::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
         
         ts::return_shared(registry);
         ts::return_to_address(ADMIN, cap);
@@ -363,7 +363,7 @@ fun test_admin_add_existing_issuer_fails() {
         let cap = ts::take_from_address<OperatorCap>(&scenario, ADMIN);
         let mut registry = ts::take_shared<IssuerRegistry>(&scenario);
 
-        attestation::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
+        core::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
         
         ts::return_shared(registry);
         ts::return_to_address(ADMIN, cap);
@@ -382,7 +382,7 @@ fun test_admin_remove_nonexistent_issuer_fails() {
         let cap = ts::take_from_address<OperatorCap>(&scenario, ADMIN);
         let mut registry = ts::take_shared<IssuerRegistry>(&scenario);
 
-        attestation::remove_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
+        core::remove_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
         
         ts::return_shared(registry);
         ts::return_to_address(ADMIN, cap);
@@ -401,7 +401,7 @@ fun test_unauthorized_issue_attestation_fails() {
         let registry = ts::take_shared<IssuerRegistry>(&scenario);
         let clock = clock::create_for_testing(ts::ctx(&mut scenario));
 
-        attestation::issue_attestation(&registry, USER_1, ONE_DAY_MS, option::none(), &clock, ts::ctx(&mut scenario));
+        core::issue_attestation(&registry, USER_1, ONE_DAY_MS, option::none(), &clock, ts::ctx(&mut scenario));
 
         ts::return_shared(registry);
         clock.destroy_for_testing();
@@ -421,9 +421,9 @@ fun test_revoke_attestation_by_non_issuer_fails() {
         let cap = ts::take_from_address<OperatorCap>(&scenario, ADMIN);
         let mut registry = ts::take_shared<IssuerRegistry>(&scenario);
 
-        attestation::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
+        core::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
 
-        assert!(attestation::is_issuer_authorized(&registry, ISSUER_1), 0);
+        assert!(core::is_issuer_authorized(&registry, ISSUER_1), 0);
         assert_eq(registry.test_issuer_count(), 1);
 
         ts::return_shared(registry);
@@ -436,7 +436,7 @@ fun test_revoke_attestation_by_non_issuer_fails() {
         let registry = ts::take_shared<IssuerRegistry>(&scenario);
         let clock = clock::create_for_testing(ts::ctx(&mut scenario));
 
-        attestation::issue_attestation(&registry, USER_1, ONE_DAY_MS, option::none(), &clock, ts::ctx(&mut scenario));
+        core::issue_attestation(&registry, USER_1, ONE_DAY_MS, option::none(), &clock, ts::ctx(&mut scenario));
 
         ts::return_shared(registry);
         clock.destroy_for_testing();
@@ -447,7 +447,7 @@ fun test_revoke_attestation_by_non_issuer_fails() {
     {
         let mut attestation = ts::take_from_address(&scenario, USER_1);
 
-        attestation::revoke_attestation(&mut attestation, ts::ctx(&mut scenario));
+        core::revoke_attestation(&mut attestation, ts::ctx(&mut scenario));
 
         ts::return_to_address(USER_1, attestation);
     };
@@ -466,9 +466,9 @@ fun test_revoke_already_revoked_attestation_fails() {
         let cap = ts::take_from_address<OperatorCap>(&scenario, ADMIN);
         let mut registry = ts::take_shared<IssuerRegistry>(&scenario);
 
-        attestation::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
+        core::add_issuer(&cap, &mut registry, ISSUER_1, ts::ctx(&mut scenario));
 
-        assert!(attestation::is_issuer_authorized(&registry, ISSUER_1), 0);
+        assert!(core::is_issuer_authorized(&registry, ISSUER_1), 0);
         assert_eq(registry.test_issuer_count(), 1);
 
         ts::return_shared(registry);
@@ -481,7 +481,7 @@ fun test_revoke_already_revoked_attestation_fails() {
         let registry = ts::take_shared<IssuerRegistry>(&scenario);
         let clock = clock::create_for_testing(ts::ctx(&mut scenario));
 
-        attestation::issue_attestation(&registry, USER_1, ONE_DAY_MS, option::none(), &clock, ts::ctx(&mut scenario));
+        core::issue_attestation(&registry, USER_1, ONE_DAY_MS, option::none(), &clock, ts::ctx(&mut scenario));
 
         ts::return_shared(registry);
         clock.destroy_for_testing();
@@ -491,7 +491,7 @@ fun test_revoke_already_revoked_attestation_fails() {
     ts::next_tx(&mut scenario, ISSUER_1);
     {
         let mut attestation = ts::take_from_address<KycAttestation>(&scenario, USER_1);
-        attestation::revoke_attestation(&mut attestation, ts::ctx(&mut scenario));
+        core::revoke_attestation(&mut attestation, ts::ctx(&mut scenario));
         ts::return_to_address(USER_1, attestation);
     };
 
@@ -501,7 +501,7 @@ fun test_revoke_already_revoked_attestation_fails() {
         let mut attestation = ts::take_from_address<KycAttestation>(&scenario, USER_1);
         assert_eq(attestation.test_is_status_revoked(), true);
 
-        attestation::revoke_attestation(&mut attestation, ts::ctx(&mut scenario));
+        core::revoke_attestation(&mut attestation, ts::ctx(&mut scenario));
         ts::return_to_address(USER_1, attestation);
     };
 
