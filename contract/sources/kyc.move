@@ -30,7 +30,7 @@
 /// 6.  Anyone can call `get_effective_status` on a `KycAttestation` object ID to check if it's
 ///     currently considered Active, Expired, or Revoked.
 ///
-module coda_kyc::attestation;
+module coda_kyc::core;
 
 use sui::event;
 use sui::clock::{Clock};
