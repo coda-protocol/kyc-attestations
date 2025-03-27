@@ -4,14 +4,6 @@
 import { SuiClient } from "@mysten/sui/client";
 
 /**
- * Configuration options required when instantiating the SynthVerifier.
- */
-export interface SynthVerifierOptions {
-    /** An initialized SuiClient instance connected to the desired network (testnet, mainnet, etc.). */
-    suiClient: SuiClient;
-}
-
-/**
  * Represents the possible outcomes of a KYC verification check.
  */
 export enum KycVerificationStatus {

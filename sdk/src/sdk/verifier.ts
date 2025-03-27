@@ -9,16 +9,16 @@ import {
     ISSUER_REGISTRY_STRUCT_NAME,
     KYC_ATTESTATION_STRUCT_NAME,
     PACKAGE_ID,
-	ZERO_ADDRESS,
+    ZERO_ADDRESS,
 } from "./constants";
 import { KycVerificationResult, KycVerificationStatus } from "./types";
 
-export interface SynthVerifierOptions {
+export interface SynthKycOptions {
     /** An initialized SuiClient instance connected to the desired network (testnet, mainnet, etc.). */
     suiClient: SuiClient;
 }
 
-export class SynthVerifier {
+export class SynthKyc {
     readonly client: SuiClient;
     readonly packageId: string;
     readonly issuerRegistryId: string;
@@ -26,9 +26,11 @@ export class SynthVerifier {
     readonly kycAttestationType: string;
     readonly issuerRegistryType: string;
 
-    constructor(options: SynthVerifierOptions) {
+    constructor(options: SynthKycOptions) {
         if (!options?.suiClient) {
-            throw new Error('[Synth KYC] You must pass a valid instance of SuiClient');
+            throw new Error(
+                "[Synth KYC] You must pass a valid instance of SuiClient"
+            );
         }
 
         this.client = options.suiClient;
@@ -59,32 +61,36 @@ export class SynthVerifier {
 
             const result = await this.client.devInspectTransactionBlock({
                 sender: ZERO_ADDRESS,
-                transactionBlock: tx
+                transactionBlock: tx,
             });
 
-			if (result.effects.status.status !== 'success') {
-				throw new Error(
-					`devInspect failed: ${result.effects.status.error || 'Unknown Error'}`
-				);
-			}
+            if (result.effects.status.status !== "success") {
+                throw new Error(
+                    `devInspect failed: ${
+                        result.effects.status.error || "Unknown Error"
+                    }`
+                );
+            }
 
-			const returnValue = result.results?.[0]?.returnValues?.[0];
-			if (!returnValue) {
-				throw new Error('Could not parse return values from get_effective_status.')
-			}
+            const returnValue = result.results?.[0]?.returnValues?.[0];
+            if (!returnValue) {
+                throw new Error(
+                    "Could not parse return values from get_effective_status."
+                );
+            }
 
-			// decode the bcs bytes for the KycEffectiveStatus enum
-			const returnType = `${this.packageId}::core::KycEffectiveStatus`;
-			if (returnValue[1] !== returnType) {
-				throw new Error(`Unexpected return type: ${returnValue[1]}`);
-			}
+            // decode the bcs bytes for the KycEffectiveStatus enum
+            const returnType = `${this.packageId}::core::KycEffectiveStatus`;
+            if (returnValue[1] !== returnType) {
+                throw new Error(`Unexpected return type: ${returnValue[1]}`);
+            }
 
-			const statusIndex = returnValue[0][0];
-			if (statusIndex === 0) return 'Active';
-			if (statusIndex === 1) return 'Expired';
-			if (statusIndex === 2) return 'Revoked';
-			
-			throw new Error(`Unknown status index returned: ${statusIndex}`);
+            const statusIndex = returnValue[0][0];
+            if (statusIndex === 0) return "Active";
+            if (statusIndex === 1) return "Expired";
+            if (statusIndex === 2) return "Revoked";
+
+            throw new Error(`Unknown status index returned: ${statusIndex}`);
         } catch (error) {
             console.error(
                 `[Synth KYC] Error calling get_effective_status for ${objectId}:`,
@@ -94,13 +100,13 @@ export class SynthVerifier {
         }
     }
 
-	/**
-	 * Verifies the KYC status of a user by checking their owned KycAttestation objects.
-	 * Performs checks for ownership validity (owner == recipient), and on-chain status (Active/Expired/Revoked).
-	 *
-	 * @param address - The address of the user to verify.
-	 * @returns A Promise resolving to a KycVerificationResult object.
-	 */
+    /**
+     * Verifies the KYC status of a user by checking their owned KycAttestation objects.
+     * Performs checks for ownership validity (owner == recipient), and on-chain status (Active/Expired/Revoked).
+     *
+     * @param address - The address of the user to verify.
+     * @returns A Promise resolving to a KycVerificationResult object.
+     */
     async verifyKycStatus(address: string): Promise<KycVerificationResult> {
         try {
             const res = await this.client.getOwnedObjects({
@@ -116,13 +122,14 @@ export class SynthVerifier {
                 };
             }
 
-			let result: KycVerificationResult = {
-				status: KycVerificationStatus.NotVerified,
-				details: 'No valid KYC attestation found from an authorized issuer.'
-			};
+            let result: KycVerificationResult = {
+                status: KycVerificationStatus.NotVerified,
+                details:
+                    "No valid KYC attestation found from an authorized issuer.",
+            };
 
             for (const obj of res.data) {
-				// @dev basic validation of the object structure before we begin
+                // @dev basic validation of the object structure before we begin
                 if (
                     !obj.data ||
                     obj.data.content?.dataType !== "moveObject" ||
@@ -136,120 +143,139 @@ export class SynthVerifier {
                 }
 
                 const data = obj.data.content.fields as any;
-				const objectId = obj.data.objectId;
-				const recipient = data.recipient;
+                const objectId = obj.data.objectId;
+                const recipient = data.recipient;
 
-				// @dev check if we have ownership information and if it has the correct properties.
-				const ownerInfo = obj.data?.owner;
-				let currentOwner: string | undefined = undefined;
+                // @dev check if we have ownership information and if it has the correct properties.
+                const ownerInfo = obj.data?.owner;
+                let currentOwner: string | undefined = undefined;
 
-				if (ownerInfo && typeof ownerInfo === 'object' && 'AddressOwner' in ownerInfo) {
-					currentOwner = ownerInfo.AddressOwner;
-				} else {
-					console.warn(
-						`[Synth KYC] Skipping object ${objectId} - could not determine address owner.`,
-						ownerInfo
-					);
-					continue;
-				}
+                if (
+                    ownerInfo &&
+                    typeof ownerInfo === "object" &&
+                    "AddressOwner" in ownerInfo
+                ) {
+                    currentOwner = ownerInfo.AddressOwner;
+                } else {
+                    console.warn(
+                        `[Synth KYC] Skipping object ${objectId} - could not determine address owner.`,
+                        ownerInfo
+                    );
+                    continue;
+                }
 
-				const attestationDetails = {
-					objectId,
-					issuer: data.issuer,
-					recipient,
-					currentOwner,
-					issuedAt: new Date(Number(data.issuance_timestamp_ms)),
-					expiresAt: Number(data.expiry_timestamp_ms) > 0
-						? new Date(Number(data.expiry_timestamp_ms))
-						: null,
-					statusRaw: data.status?.variant === 'Active' ? 'Active' : 'Revoked'
-				}
+                const attestationDetails = {
+                    objectId,
+                    issuer: data.issuer,
+                    recipient,
+                    currentOwner,
+                    issuedAt: new Date(Number(data.issuance_timestamp_ms)),
+                    expiresAt:
+                        Number(data.expiry_timestamp_ms) > 0
+                            ? new Date(Number(data.expiry_timestamp_ms))
+                            : null,
+                    statusRaw:
+                        data.status?.variant === "Active"
+                            ? "Active"
+                            : "Revoked",
+                };
 
-				// @dev check if our attestation recipient matches the object owner.
-				// if it is not then this attestation is now invalid.
-				if (currentOwner !== recipient) {
-					console.warn(
-						`[Synth KYC] Object ${objectId} owner (${currentOwner}) does not match recipient (${recipient}). Attestation considered transferred/invalid.`
-					);
-					
-					if (result.status === KycVerificationStatus.NotVerified) {
-						result = {
-							status: KycVerificationStatus.Invalid,
-							details: `Attestation object ${objectId} owner does not match intended recipient.`,
-							attestation: attestationDetails
-						};
-					}
+                // @dev check if our attestation recipient matches the object owner.
+                // if it is not then this attestation is now invalid.
+                if (currentOwner !== recipient) {
+                    console.warn(
+                        `[Synth KYC] Object ${objectId} owner (${currentOwner}) does not match recipient (${recipient}). Attestation considered transferred/invalid.`
+                    );
 
-					continue;
-				}
+                    if (result.status === KycVerificationStatus.NotVerified) {
+                        result = {
+                            status: KycVerificationStatus.Invalid,
+                            details: `Attestation object ${objectId} owner does not match intended recipient.`,
+                            attestation: attestationDetails,
+                        };
+                    }
 
-				/// Check for the on-chain effective status of the attestation.
-				let effectiveStatusStr: string;
-				try {
-					effectiveStatusStr = await this.checkStatus(objectId);
-				} catch (error) {
-					console.error(
-						`[Synth KYC] Failed to query on-chain status for attestation ${objectId}: ${error}`
-					);
+                    continue;
+                }
 
-					if (result.status === KycVerificationStatus.NotVerified) {
-						result = {
-							status: KycVerificationStatus.Error,
-							details: `Failed to query on-chain status for attestation ${objectId}.`
-						};
-					}
+                // @dev check for the on-chain effective status of the attestation.
+                let effectiveStatusStr: string;
+                try {
+                    effectiveStatusStr = await this.checkStatus(objectId);
+                } catch (error) {
+                    console.error(
+                        `[Synth KYC] Failed to query on-chain status for attestation ${objectId}: ${error}`
+                    );
 
-					continue;
-				}
+                    if (result.status === KycVerificationStatus.NotVerified) {
+                        result = {
+                            status: KycVerificationStatus.Error,
+                            details: `Failed to query on-chain status for attestation ${objectId}.`,
+                        };
+                    }
 
-				// @dev map the effective status string from on-chain to the sdk status enum
-				let currentStatus: KycVerificationStatus;
-				switch (effectiveStatusStr) {
-					case 'Active': currentStatus = KycVerificationStatus.Verified; break;
-					case 'Expired': currentStatus = KycVerificationStatus.Expired; break;
-					case 'Revoked': currentStatus = KycVerificationStatus.Revoked; break;
-					default:
-						console.error(
-							`[Synth KYC] Unknown effective status string ${effectiveStatusStr}`
-						);
-						currentStatus = KycVerificationStatus.Error;
-						if (result.status === KycVerificationStatus.NotVerified) {
-							result = {
-								status: KycVerificationStatus.Error,
-								details: `Received unknown effective status '${effectiveStatusStr}' for ${objectId}.`
-							};
-						}
-						continue;
-				}
+                    continue;
+                }
 
-				// @dev construct a result for this specific object
-				const currentResult: KycVerificationResult = {
-					status: currentStatus,
-					details: `Attestation ${objectId}: Status is ${currentStatus}`,
-					attestation: attestationDetails
-				};
+                // @dev map the effective status string from on-chain to the sdk status enum
+                let currentStatus: KycVerificationStatus;
+                switch (effectiveStatusStr) {
+                    case "Active":
+                        currentStatus = KycVerificationStatus.Verified;
+                        break;
+                    case "Expired":
+                        currentStatus = KycVerificationStatus.Expired;
+                        break;
+                    case "Revoked":
+                        currentStatus = KycVerificationStatus.Revoked;
+                        break;
+                    default:
+                        console.error(
+                            `[Synth KYC] Unknown effective status string ${effectiveStatusStr}`
+                        );
+                        currentStatus = KycVerificationStatus.Error;
+                        if (
+                            result.status === KycVerificationStatus.NotVerified
+                        ) {
+                            result = {
+                                status: KycVerificationStatus.Error,
+                                details: `Received unknown effective status '${effectiveStatusStr}' for ${objectId}.`,
+                            };
+                        }
+                        continue;
+                }
 
-				// @dev if we already have a verified attestation, we can just stop here.
-				if (currentResult.status === KycVerificationStatus.Verified) {
-					return currentResult;
-				}
+                // @dev construct a result for this specific object
+                const currentResult: KycVerificationResult = {
+                    status: currentStatus,
+                    details: `Attestation ${objectId}: Status is ${currentStatus}`,
+                    attestation: attestationDetails,
+                };
 
-				// @dev if the `currentResult` is better than initial `result` we just swap.
-				const statusPriority = {
-					[KycVerificationStatus.Verified]: 5,
-					[KycVerificationStatus.Expired]: 4,
-					[KycVerificationStatus.Revoked]: 3,
-					[KycVerificationStatus.Invalid]: 2,
-					[KycVerificationStatus.NotVerified]: 1,
-					[KycVerificationStatus.Error]: 0,
-				};
+                // @dev if we already have a verified attestation, we can just stop here.
+                if (currentResult.status === KycVerificationStatus.Verified) {
+                    return currentResult;
+                }
 
-				if (statusPriority[currentResult.status] > statusPriority[result.status]) {
-					result = currentResult;
-				}
+                // @dev if the `currentResult` is better than initial `result` we just swap.
+                const statusPriority = {
+                    [KycVerificationStatus.Verified]: 5,
+                    [KycVerificationStatus.Expired]: 4,
+                    [KycVerificationStatus.Revoked]: 3,
+                    [KycVerificationStatus.Invalid]: 2,
+                    [KycVerificationStatus.NotVerified]: 1,
+                    [KycVerificationStatus.Error]: 0,
+                };
+
+                if (
+                    statusPriority[currentResult.status] >
+                    statusPriority[result.status]
+                ) {
+                    result = currentResult;
+                }
             }
 
-			return result;
+            return result;
         } catch (error) {
             console.error(
                 `[Synth KYC] Error fetching KYC attestations for ${address}:`,
