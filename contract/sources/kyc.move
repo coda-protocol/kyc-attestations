@@ -103,8 +103,7 @@ public struct KycAttestation has key, store {
     issuer: address,
     issuance_timestamp_ms: u64,
     expiry_timestamp_ms: u64,
-    status: KycStatusInternal,
-    verification_data_hash: Option<vector<u8>>
+    status: KycStatusInternal
 }
 
 //
@@ -165,7 +164,6 @@ public entry fun issue_attestation(
     registry: &IssuerRegistry,
     recipient: address,
     expiry_offset_ms: u64,
-    verification_data_hash: Option<vector<u8>>,
     clock: &Clock,
     ctx: &mut TxContext
 ) {
@@ -185,8 +183,7 @@ public entry fun issue_attestation(
         issuer,
         issuance_timestamp_ms: current_time_ms,
         expiry_timestamp_ms,
-        status: KycStatusInternal::Active,
-        verification_data_hash
+        status: KycStatusInternal::Active
     };
 
     event::emit(KycIssuedEvent {
@@ -249,8 +246,6 @@ public fun recipient(attestation: &KycAttestation): address { attestation.recipi
 public fun issuer(attestation: &KycAttestation): address { attestation.issuer }
 /// Returns the expiry timestamp (ms) stored in the attestation.
 public fun expiry_timestamp_ms(attestation: &KycAttestation): u64 { attestation.expiry_timestamp_ms }
-/// Returns the optional verification data hash.
-public fun verification_data_hash(attestation: &KycAttestation): &Option<vector<u8>> { &attestation.verification_data_hash }
 /// Returns the current status of the attestation.
 public fun status(attestation: &KycAttestation): KycStatusInternal { attestation.status }
 
