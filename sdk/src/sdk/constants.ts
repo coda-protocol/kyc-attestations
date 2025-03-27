@@ -32,3 +32,9 @@ export const ISSUER_REGISTRY_STRUCT_NAME: string = "core::IssuerRegistry";
  * @internal
  */
 export const DEFAULT_ISSUER_CACHE_DURATION_MS: number = 5 * 60 * 1000;
+
+/*
+ * Zero address used for read-only devInspect calls.
+ * @internal
+ */
+export const ZERO_ADDRESS: string = "0x0000000000000000000000000000000000000000000000000000000000000000";
