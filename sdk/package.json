@@ -1,5 +1,5 @@
 {
-    "name": "@coda/kyc",
+    "name": "@codalabs/kyc",
     "version": "0.1.0",
     "description": "SDK for Coda Labs' KYC Protocol",
     "license": "ISC",

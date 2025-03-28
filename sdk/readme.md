@@ -1,15 +1,11 @@
-## @coda/kyc
+## @codalabs/kyc
 
 This is the SDK for interacting with and verifing KYC attestations on the Sui Network.
 
 ## Installation
 
 ```
-npm i @coda/kyc
-
-pnpm i @coda/kyc
-
-yarn add @coda/kyc
+npm i @codalabs/kyc
 ```
 
 ## Get Started
@@ -17,7 +13,7 @@ yarn add @coda/kyc
 A simple implementation for KYC attestation verification.
 
 ```typescript
-import { CodaKyc, KycVerificationStatus } from "@coda/kyc";
+import { CodaKyc, KycVerificationStatus } from "@codalabs/kyc";
 
 const client = new SuiClient({
     url: getFullnodeUrl("mainnet"),
@@ -46,7 +42,7 @@ if (isVerified) {
 Fetching and reading attestation details which are queried from on-chain.
 
 ```typescript
-import { CodaKyc, KycVerificationStatus } from "@coda/kyc";
+import { CodaKyc, KycVerificationStatus } from "@codalabs/kyc";
 
 const client = new SuiClient({
     url: getFullnodeUrl("mainnet"),
