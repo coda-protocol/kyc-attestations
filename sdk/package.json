@@ -1,6 +1,6 @@
 {
     "name": "@coda/kyc",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "description": "SDK for Coda Labs' KYC Protocol",
     "license": "ISC",
     "main": "index.js",
