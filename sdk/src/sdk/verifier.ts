@@ -13,12 +13,12 @@ import {
 } from "./constants";
 import { KycVerificationResult, KycVerificationStatus } from "./types";
 
-export interface SynthKycOptions {
+export interface CodaKycOptions {
     /** An initialized SuiClient instance connected to the desired network (testnet, mainnet, etc.). */
     suiClient: SuiClient;
 }
 
-export class SynthKyc {
+export class CodaKyc {
     readonly client: SuiClient;
     readonly packageId: string;
     readonly issuerRegistryId: string;
@@ -26,10 +26,10 @@ export class SynthKyc {
     readonly kycAttestationType: string;
     readonly issuerRegistryType: string;
 
-    constructor(options: SynthKycOptions) {
+    constructor(options: CodaKycOptions) {
         if (!options?.suiClient) {
             throw new Error(
-                "[Synth KYC] You must pass a valid instance of SuiClient"
+                "[Coda KYC] You must pass a valid instance of SuiClient"
             );
         }
 
@@ -93,7 +93,7 @@ export class SynthKyc {
             throw new Error(`Unknown status index returned: ${statusIndex}`);
         } catch (error) {
             console.error(
-                `[Synth KYC] Error calling get_effective_status for ${objectId}:`,
+                `[Coda KYC] Error calling get_effective_status for ${objectId}:`,
                 error
             );
             throw new Error(`Error checking attestation status: ${error}`);
@@ -158,7 +158,7 @@ export class SynthKyc {
                     currentOwner = ownerInfo.AddressOwner;
                 } else {
                     console.warn(
-                        `[Synth KYC] Skipping object ${objectId} - could not determine address owner.`,
+                        `[Coda KYC] Skipping object ${objectId} - could not determine address owner.`,
                         ownerInfo
                     );
                     continue;
@@ -184,7 +184,7 @@ export class SynthKyc {
                 // if it is not then this attestation is now invalid.
                 if (currentOwner !== recipient) {
                     console.warn(
-                        `[Synth KYC] Object ${objectId} owner (${currentOwner}) does not match recipient (${recipient}). Attestation considered transferred/invalid.`
+                        `[Coda KYC] Object ${objectId} owner (${currentOwner}) does not match recipient (${recipient}). Attestation considered transferred/invalid.`
                     );
 
                     if (result.status === KycVerificationStatus.NotVerified) {
@@ -204,7 +204,7 @@ export class SynthKyc {
                     effectiveStatusStr = await this.checkStatus(objectId);
                 } catch (error) {
                     console.error(
-                        `[Synth KYC] Failed to query on-chain status for attestation ${objectId}: ${error}`
+                        `[Coda KYC] Failed to query on-chain status for attestation ${objectId}: ${error}`
                     );
 
                     if (result.status === KycVerificationStatus.NotVerified) {
@@ -231,7 +231,7 @@ export class SynthKyc {
                         break;
                     default:
                         console.error(
-                            `[Synth KYC] Unknown effective status string ${effectiveStatusStr}`
+                            `[Coda KYC] Unknown effective status string ${effectiveStatusStr}`
                         );
                         currentStatus = KycVerificationStatus.Error;
                         if (
@@ -278,7 +278,7 @@ export class SynthKyc {
             return result;
         } catch (error) {
             console.error(
-                `[Synth KYC] Error fetching KYC attestations for ${address}:`,
+                `[Coda KYC] Error fetching KYC attestations for ${address}`,
                 error
             );
             return {

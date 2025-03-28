@@ -1,5 +1,5 @@
 {
-    "name": "@synth/kyc",
+    "name": "@coda/kyc",
     "version": "1.0.0",
     "description": "SDK for Coda Labs' KYC Protocol",
     "license": "ISC",

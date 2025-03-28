@@ -1,15 +1,15 @@
 import { SuiClient, getFullnodeUrl } from "@mysten/sui/client";
-import { SynthKyc, KycVerificationStatus } from "../dist";
+import { CodaKyc, KycVerificationStatus } from "../dist";
+
+const client = new SuiClient({
+    url: getFullnodeUrl("testnet"),
+});
+
+const verifier = new CodaKyc({
+    suiClient: client,
+});
 
 async function checkUser(address: string) {
-    const client = new SuiClient({
-        url: getFullnodeUrl("testnet"),
-    });
-
-    const verifier = new SynthKyc({
-        suiClient: client,
-    });
-
     console.log(`Checking KYC for ${address}...`);
 
     const result = await verifier.verifyKycStatus(address);
