@@ -1,6 +1,6 @@
 {
     "name": "@codalabs/kyc",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "SDK for Coda Labs' KYC Protocol",
     "license": "ISC",
     "main": "index.js",
@@ -8,9 +8,6 @@
         "build:js": "tsup src/index.ts --format cjs,esm --out-dir dist",
         "build:types": "tsc --emitDeclarationOnly",
         "build": "npm run build:js && npm run build:types"
-    },
-    "dependencies": {
-        "@mysten/sui": "^1.25.0"
     },
     "devDependencies": {
         "@types/node": "^22.13.13",

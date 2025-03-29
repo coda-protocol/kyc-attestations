@@ -1,7 +1,15 @@
 // Copyright (c) Coda labs.
 // SPDX-License-Identifier: ISC
 
-import { SuiClient } from "@mysten/sui/client";
+/**
+ * Configuration options required when instantiating the SDK.
+ */
+export interface CodaKycOptions {
+    /** Your unique API key obtained from the Coda KYC dashboard. */
+    apiKey: string;
+    /** Optional: The base URL of the Coda KYC API service. Defaults to production URL. */
+    apiBaseUrl?: string;
+}
 
 /**
  * Represents the possible outcomes of a KYC verification check.
