@@ -1,6 +1,7 @@
 import { SUI_CLOCK_OBJECT_ID } from "@mysten/sui/utils";
 import { suiClient } from "./sui-client";
 import { Transaction } from "@mysten/sui/transactions";
+import { PACKAGE_ID, ZERO_ADDRESS } from "@/constants";
 
 /**
  * Calls the `get_effective_status` view function on the KYC contract
