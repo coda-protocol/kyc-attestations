@@ -1,8 +1,8 @@
 ## @codalabs/kyc
 
-You can make use of this library to interact with [Coda Labs](coda.ac)' KYC (Know Your Customer) protocol.
+You can make use of this library to interact with [Coda Labs](https://coda.ac/)' KYC (Know Your Customer) protocol.
 
-> To acquire an api key, please use the dashboard. For specific requests you can contact **@opiateful** on Telegram.
+> To acquire an api key, please use the [dashboard](https://kyc.coda.ac/). For specific requests you can contact **@opiateful** on Telegram.
 
 ## Installation
 
